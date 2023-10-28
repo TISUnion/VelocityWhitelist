@@ -27,6 +27,10 @@ public class WhitelistManager
 		this.logger = logger;
 		this.config = config;
 		this.whitelistFilePath = dataDirectory.resolve("whitelist.yml");
+	}
+
+	public void init()
+	{
 		this.loadWhitelist();
 	}
 

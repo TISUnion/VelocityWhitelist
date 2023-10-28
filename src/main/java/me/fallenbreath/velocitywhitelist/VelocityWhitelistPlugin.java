@@ -50,6 +50,9 @@ public class VelocityWhitelistPlugin
 			return;
 		}
 
+		// now the config dir definitely exists
+		this.whitelistManager.init();
+
 		this.server.getEventManager().register(this, LoginEvent.class, this.whitelistManager::onPlayerLogin);
 		new WhitelistCommand(this.config, this.whitelistManager).register(this.server.getCommandManager());
 	}
