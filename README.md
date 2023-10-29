@@ -17,7 +17,7 @@ Require permission `velocitywhitelist.command`
 
 `/vwhitelist` is an alias of `/whitelist`
 
-- `/whitelist`: sow plugin status
+- `/whitelist`: show plugin status
 - `/whitelist add <name>`: add a player to the whitelist
 - `/whitelist remove <name>`: remove a player from the whitelist
 - `/whitelist list`: list all whitelist players
