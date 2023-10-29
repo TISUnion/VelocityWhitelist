@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,10 +19,12 @@ public class Whitelist
 {
 	private final Set<String> names = Sets.newLinkedHashSet();
 	private final Path whitelistFilePath;
+	private final Path whitelistTempFilePath;
 
 	public Whitelist(Path whitelistFilePath)
 	{
 		this.whitelistFilePath = whitelistFilePath;
+		this.whitelistTempFilePath = whitelistFilePath.resolveSibling(whitelistFilePath.getFileName().toString() + ".tmp");
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -49,7 +52,8 @@ public class Whitelist
 		dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
 		String yamlContent = new Yaml(dumperOptions).dump(options);
-		Files.writeString(this.whitelistFilePath, yamlContent, StandardCharsets.UTF_8);
+		Files.writeString(this.whitelistTempFilePath, yamlContent, StandardCharsets.UTF_8);
+		Files.move(this.whitelistTempFilePath, this.whitelistFilePath, StandardCopyOption.REPLACE_EXISTING);
 	}
 
 	public Set<String> getNames()
