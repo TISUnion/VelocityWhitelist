@@ -27,7 +27,7 @@ public class WhitelistCommand
 	public void register(CommandManager commandManager)
 	{
 		var root = literal("whitelist").
-				requires(s -> s.hasPermission("command.whitelist")).
+				requires(s -> s.hasPermission(PluginMeta.ID + ".command")).
 				executes(c -> showPluginInfo(c.getSource())).
 				then(literal("add").
 						then(argument("name", word()).
@@ -44,7 +44,12 @@ public class WhitelistCommand
 						executes(c -> listWhitelist(c.getSource()))
 				);
 
+		var alternative = literal("vwhitelist").
+				requires(s -> s.hasPermission(PluginMeta.ID + ".command")).
+				redirect(root.build());
+
 		commandManager.register(new BrigadierCommand(root.build()));
+		commandManager.register(new BrigadierCommand(alternative.build()));
 	}
 
 	private int showPluginInfo(CommandSource source)
