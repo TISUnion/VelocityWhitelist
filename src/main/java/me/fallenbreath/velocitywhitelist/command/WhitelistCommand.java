@@ -42,6 +42,9 @@ public class WhitelistCommand
 				).
 				then(literal("list").
 						executes(c -> listWhitelist(c.getSource()))
+				).
+				then(literal("reload").
+						executes(c -> reloadWhitelist(c.getSource()))
 				);
 
 		var alternative = literal("vwhitelist").
@@ -95,5 +98,12 @@ public class WhitelistCommand
 		source.sendMessage(Component.text(String.format("Whitelist size: %d", players.size())));
 		source.sendMessage(Component.text(String.format("Whitelist players: %s", Joiner.on(", ").join(players))));
 		return players.size();
+	}
+
+	private int reloadWhitelist(CommandSource source)
+	{
+		this.whitelistManager.reloadWhitelist();
+		source.sendMessage(Component.text("Whitelist reloaded"));
+		return 0;
 	}
 }

@@ -34,6 +34,11 @@ public class WhitelistManager
 		this.loadWhitelist();
 	}
 
+	public void reloadWhitelist()
+	{
+		this.loadWhitelist();
+	}
+
 	public boolean isPlayerInWhitelist(GameProfile profile)
 	{
 		synchronized (this.whitelistLock)
