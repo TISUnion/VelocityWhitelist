@@ -1,2 +1,3 @@
 enabled: true
+identify_mode: name
 kick_message: You are not in the whitelist!

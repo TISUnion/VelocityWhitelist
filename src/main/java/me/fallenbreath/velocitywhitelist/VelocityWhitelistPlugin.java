@@ -37,8 +37,8 @@ public class VelocityWhitelistPlugin
 		this.server = server;
 		this.logger = logger;
 		this.dataDirectory = dataDirectory;
-		this.config = new Configuration();
-		this.whitelistManager = new WhitelistManager(logger, this.config, this.dataDirectory);
+		this.config = new Configuration(this.logger);
+		this.whitelistManager = new WhitelistManager(logger, this.config, this.dataDirectory, this.server);
 	}
 
 	@Subscribe

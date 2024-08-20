@@ -6,10 +6,48 @@ Currently, it only supports name-based whitelist
 
 Tested with velocity `3.3.0`
 
-## File location
+## Files
 
-- Config file: `plugins/velocitywhitelist/config.yml`
-- Whitelist file: `plugins/velocitywhitelist/whitelist.yml`
+### Config
+
+File location: `plugins/velocitywhitelist/config.yml`
+
+```yaml
+# If the whitelist functionality is enabled
+enabled: true
+
+# The way to identify a player
+# Options: name, uuid. Default: name
+identify_mode: name
+
+# Message sent to those not whitelisted players
+kick_message: You are not in the whitelist!
+```
+
+### Whitelist
+
+File location: `plugins/velocitywhitelist/whitelist.yml`
+
+```yaml
+# Whitelisted player names. Used in "name" mode only
+names:
+  - Fallen_Breath
+  - Steve
+
+# Whitelisted player UUIDs. Used in "uuid" mode only
+uuids:
+  - 85dbd009-69ed-3cc4-b6b6-ac1e6d07202e
+  - 5c93374f-2d55-3003-a4b5-ca885736fb0f
+```
+
+Additionally, items of the `uuids` list can be a map containing exactly 1 entry, indicating uuid to the player name.
+This is designed for easier identifying what the UUID belongs to
+
+```yaml
+uuids:
+- 85dbd009-69ed-3cc4-b6b6-ac1e6d07202e: Fallen_Breath
+- 5c93374f-2d55-3003-a4b5-ca885736fb0f: Steve
+```
 
 ## Command
 
@@ -32,4 +70,5 @@ For player operation commands, `<value>` has different meaning depends on the id
 
 ## TODO
 
-- [ ] UUID support
+- [x] UUID support
+- [ ] HTTP proxy support for online UUID query

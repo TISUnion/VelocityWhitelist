@@ -36,7 +36,7 @@ public class WhitelistCommand
 				).
 				then(literal("remove").
 						then(argument("name", word()).
-								suggests((c, sb) -> suggestMatching(this.whitelistManager.getPlayers(), sb)).
+								suggests((c, sb) -> suggestMatching(this.whitelistManager.getValuesForRemovalSuggestion(), sb)).
 								executes(c -> removeWhitelist(c.getSource(), getString(c, "name")))
 						)
 				).
@@ -64,37 +64,27 @@ public class WhitelistCommand
 
 	private int addWhitelist(CommandSource source, String name)
 	{
-		boolean ok = this.whitelistManager.addPlayer(name);
-		if (ok)
+		if (this.whitelistManager.addPlayer(source, name))
 		{
-			source.sendMessage(Component.text(String.format("Added player %s to the whitelist", name)));
 			this.whitelistManager.saveWhitelist();
+			return 1;
 		}
-		else
-		{
-			source.sendMessage(Component.text(String.format("Player %s is already in the whitelist", name)));
-		}
-		return ok ? 1 : 0;
+		return 0;
 	}
 
 	private int removeWhitelist(CommandSource source, String name)
 	{
-		boolean ok = this.whitelistManager.removePlayer(name);
-		if (ok)
+		if (this.whitelistManager.removePlayer(source, name))
 		{
-			source.sendMessage(Component.text(String.format("Removed player %s from the whitelist", name)));
 			this.whitelistManager.saveWhitelist();
+			return 1;
 		}
-		else
-		{
-			source.sendMessage(Component.text(String.format("Player %s does not in the whitelist", name)));
-		}
-		return ok ? 1 : 0;
+		return 0;
 	}
 
 	private int listWhitelist(CommandSource source)
 	{
-		var players = this.whitelistManager.getPlayers();
+		var players = this.whitelistManager.getValuesForListing();
 		source.sendMessage(Component.text(String.format("Whitelist size: %d", players.size())));
 		source.sendMessage(Component.text(String.format("Whitelist players: %s", Joiner.on(", ").join(players))));
 		return players.size();
