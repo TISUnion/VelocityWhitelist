@@ -4,7 +4,7 @@ A simple whitelist plugin for [velocity](https://github.com/PaperMC/Velocity)
 
 Currently, it only supports name-based whitelist
 
-Tested with velocity `3.2.0`
+Tested with velocity `3.3.0`
 
 ## File location
 
