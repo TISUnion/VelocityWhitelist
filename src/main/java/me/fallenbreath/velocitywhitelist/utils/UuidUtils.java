@@ -1,9 +1,10 @@
-package me.fallenbreath.velocitywhitelist;
+package me.fallenbreath.velocitywhitelist.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
-public class Utils
+public class UuidUtils
 {
 	private static String insertDashesIntoUUIDString(String uuid)
 	{
@@ -31,5 +32,10 @@ public class Utils
 		}
 
 		return Optional.empty();
+	}
+
+	public static UUID getOfflinePlayerUuid(String playerName)
+	{
+		return UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(StandardCharsets.UTF_8));
 	}
 }

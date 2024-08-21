@@ -2,9 +2,7 @@
 
 A simple whitelist plugin for [velocity](https://github.com/PaperMC/Velocity)
 
-Currently, it only supports name-based whitelist
-
-Tested with velocity `3.3.0`
+Tested with velocity `3.3.0`, java 17
 
 ## Files
 
@@ -31,13 +29,13 @@ File location: `plugins/velocitywhitelist/whitelist.yml`
 ```yaml
 # Whitelisted player names. Used in "name" mode only
 names:
-  - Fallen_Breath
-  - Steve
+- Fallen_Breath
+- Steve
 
 # Whitelisted player UUIDs. Used in "uuid" mode only
 uuids:
-  - 85dbd009-69ed-3cc4-b6b6-ac1e6d07202e
-  - 5c93374f-2d55-3003-a4b5-ca885736fb0f
+- 85dbd009-69ed-3cc4-b6b6-ac1e6d07202e
+- 5c93374f-2d55-3003-a4b5-ca885736fb0f
 ```
 
 Additionally, items of the `uuids` list can be a map containing exactly 1 entry, indicating uuid to the player name.
@@ -71,4 +69,3 @@ For player operation commands, `<value>` has different meaning depends on the id
 ## TODO
 
 - [x] UUID support
-- [ ] HTTP proxy support for online UUID query

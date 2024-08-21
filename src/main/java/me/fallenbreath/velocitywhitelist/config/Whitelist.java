@@ -3,7 +3,7 @@ package me.fallenbreath.velocitywhitelist.config;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import me.fallenbreath.velocitywhitelist.Utils;
+import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.DumperOptions;
@@ -52,7 +52,7 @@ public class Whitelist
 			list.forEach(item -> {
 				if (item instanceof String s)
 				{
-					Utils.tryParseUuid(s).ifPresentOrElse(
+					UuidUtils.tryParseUuid(s).ifPresentOrElse(
 							uuid -> this.uuids.put(uuid, null),
 							() -> logger.warn("Skipping invalid UUID \"{}\"", s)
 					);
@@ -69,7 +69,7 @@ public class Whitelist
 						if (entry.getKey() instanceof String s && (entry.getValue() instanceof String || entry.getValue() == null))
 						{
 							String name = (String)entry.getValue();
-							Utils.tryParseUuid(s).ifPresentOrElse(
+							UuidUtils.tryParseUuid(s).ifPresentOrElse(
 									uuid -> this.uuids.put(uuid, name),
 									() -> logger.warn("Skipping invalid UUID \"{}\" ({})", s, name)
 							);

@@ -9,6 +9,8 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.util.GameProfile;
 import me.fallenbreath.velocitywhitelist.config.Configuration;
 import me.fallenbreath.velocitywhitelist.config.Whitelist;
+import me.fallenbreath.velocitywhitelist.utils.MojangAPI;
+import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -122,8 +124,8 @@ public class WhitelistManager
 			UuidHandler handleUuidMode
 	)
 	{
-		Optional<UUID> uuid = Utils.tryParseUuid(value);
-		Optional<GameProfile> profile = this.server.getPlayer(value).map(Player::getGameProfile);
+		Optional<UUID> uuid = UuidUtils.tryParseUuid(value);
+		Optional<GameProfile> profile = this.server.getPlayer(value).map(Player::getGameProfile);  // get online player by name
 
 		if (uuid.isEmpty())
 		{
@@ -131,8 +133,18 @@ public class WhitelistManager
 		}
 		if (uuid.isEmpty() && profile.isEmpty() && this.config.getIdentifyMode() != IdentifyMode.NAME)  // no need to lookup for name mode
 		{
-			profile = MojangAPI.queryPlayerByName(this.logger, value)
-					.map(r -> new GameProfile(r.uuid(), r.playerName(), List.of()));
+			// uuid == null && profile == null  -> input is name, player not online
+			if (this.server.getConfiguration().isOnlineMode())
+			{
+				profile = MojangAPI.queryPlayerByName(this.logger, this.server, value)
+						.map(r -> new GameProfile(r.uuid(), r.playerName(), List.of()));
+			}
+			else
+			{
+				UUID offlineUuid = UuidUtils.getOfflinePlayerUuid(value);
+				profile = Optional.of(new GameProfile(offlineUuid, value, List.of()));
+				source.sendPlainMessage(String.format("Inferred offline uuid from player name %s: %s", value, offlineUuid));
+			}
 		}
 		if (uuid.isEmpty())
 		{
@@ -197,7 +209,7 @@ public class WhitelistManager
 						String oldName = uuids.get(uuid);
 						if (playerName != null && (oldName == null || !oldName.equals(playerName)))
 						{
-							uuids.put(uuid, playerName);  // set player name as comment
+							uuids.put(uuid, playerName);  // set player name as a comment
 							source.sendMessage(Component.text(String.format(
 									"Player %s is already in the whitelist, updated player name for this uuid from %s to %s",
 									displayName, oldName, playerName
