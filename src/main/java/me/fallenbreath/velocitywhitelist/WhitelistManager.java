@@ -248,7 +248,7 @@ public class WhitelistManager
 						source.sendMessage(Component.text(String.format("Removed player %s from the whitelist", displayName)));
 						return true;
 					}
-					source.sendMessage(Component.text(String.format("Player %s does not in the whitelist", displayName)));
+					source.sendMessage(Component.text(String.format("Player %s is not in the whitelist", displayName)));
 					return false;
 				}
 		);
