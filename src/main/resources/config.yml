@@ -1,3 +1,18 @@
-enabled: true
+# Config file version. Do not edit it
+_version: 1
+
+# The way to identify a player
+# Options: name, uuid. Default: name
+# For online servers, it's suggested to use the uuid mode 
+# since it can keep tracking on the mojang account of the player
 identify_mode: name
-kick_message: You are not in the whitelist!
+
+# If the whitelist functionality is enabled
+whitelist_enabled: true
+# Message sent to those not whitelisted players
+whitelist_kick_message: You are not in the whitelist!
+
+# If the blacklist functionality is enabled
+blacklist_enabled: true
+# Message sent to those blacklisted players
+blacklist_kick_message: You are banned from the server!

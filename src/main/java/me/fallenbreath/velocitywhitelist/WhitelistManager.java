@@ -1,5 +1,6 @@
 package me.fallenbreath.velocitywhitelist;
 
+import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.ResultedEvent;
@@ -8,7 +9,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.util.GameProfile;
 import me.fallenbreath.velocitywhitelist.config.Configuration;
-import me.fallenbreath.velocitywhitelist.config.Whitelist;
+import me.fallenbreath.velocitywhitelist.config.PlayerList;
 import me.fallenbreath.velocitywhitelist.utils.MojangAPI;
 import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import net.kyori.adventure.text.Component;
@@ -19,48 +20,81 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class WhitelistManager
 {
 	private final Logger logger;
 	private final Configuration config;
 	private final Path whitelistFilePath;
+	private final Path blacklistFilePath;
 	private final ProxyServer server;
-	private Whitelist whitelist = null;
-	private final Object whitelistLock = new Object();
+	private final Object listLock = new Object();
+	@Nullable private PlayerList whitelist = null;
+	@Nullable private PlayerList blacklist = null;
 
 	public WhitelistManager(Logger logger, Configuration config, Path dataDirectory, ProxyServer server)
 	{
 		this.logger = logger;
 		this.config = config;
 		this.whitelistFilePath = dataDirectory.resolve("whitelist.yml");
+		this.blacklistFilePath = dataDirectory.resolve("blacklist.yml");
 		this.server = server;
 	}
 
-	public void init()
+	@Nullable
+	public PlayerList getWhitelist()
 	{
-		this.loadWhitelist();
+		return this.whitelist;
 	}
 
-	public void reloadWhitelist()
+	@Nullable
+	public PlayerList getBlacklist()
+	{
+		return this.blacklist;
+	}
+
+	public void loadLists()
 	{
 		this.loadWhitelist();
+		this.loadBlacklist();
+	}
+
+	public void loadWhitelist()
+	{
+		this.loadOneList(() -> new PlayerList("Whitelist", this.whitelistFilePath), list -> this.whitelist = list);
+	}
+
+	public void loadBlacklist()
+	{
+		this.loadOneList(() -> new PlayerList("Blacklist", this.blacklistFilePath), list -> this.blacklist = list);
+	}
+
+	private boolean isPlayerInList(GameProfile profile, @Nullable PlayerList list)
+	{
+		if (list == null)
+		{
+			return false;
+		}
+		synchronized (this.listLock)
+		{
+			return switch (this.config.getIdentifyMode())
+			{
+				case NAME -> list.getNames().contains(profile.getName());
+				case UUID -> list.getUuidMapping().containsKey(profile.getId());
+			};
+		}
 	}
 
 	public boolean isPlayerInWhitelist(GameProfile profile)
 	{
-		synchronized (this.whitelistLock)
-		{
-			return switch (this.config.getIdentifyMode())
-			{
-				case NAME -> this.whitelist.getNames().contains(profile.getName());
-				case UUID -> this.whitelist.getUuidMapping().containsKey(profile.getId());
-			};
-		}
+		return this.isPlayerInList(profile, this.whitelist);
+	}
+
+	public boolean isPlayerInBlacklist(GameProfile profile)
+	{
+		return this.isPlayerInList(profile, this.blacklist);
 	}
 
 	private static String pretty(@NotNull UUID uuid, @Nullable String name)
@@ -68,18 +102,22 @@ public class WhitelistManager
 		return name != null ? String.format("%s (%s)", name, uuid) : uuid.toString();
 	}
 
-	public List<String> getValuesForRemovalSuggestion()
+	public List<String> getValuesForRemovalSuggestion(@Nullable PlayerList list)
 	{
-		synchronized (this.whitelistLock)
+		if (list == null)
+		{
+			return Collections.emptyList();
+		}
+		synchronized (this.listLock)
 		{
 			switch (this.config.getIdentifyMode())
 			{
 				case NAME:
-					return Lists.newArrayList(this.whitelist.getNames());
+					return Lists.newArrayList(list.getNames());
 				case UUID:
 					List<String> values = Lists.newArrayList();
-					this.whitelist.getUuidMapping().keySet().forEach(uuid -> values.add(uuid.toString()));
-					this.whitelist.getUuidMapping().values().forEach(name -> {
+					list.getUuidMapping().keySet().forEach(uuid -> values.add(uuid.toString()));
+					list.getUuidMapping().values().forEach(name -> {
 						if (name != null)
 						{
 							values.add(name);
@@ -92,14 +130,18 @@ public class WhitelistManager
 		}
 	}
 
-	public List<String> getValuesForListing()
+	public List<String> getValuesForListing(@Nullable PlayerList list)
 	{
-		synchronized (this.whitelistLock)
+		if (list == null)
+		{
+			return Collections.emptyList();
+		}
+		synchronized (this.listLock)
 		{
 			return switch (this.config.getIdentifyMode())
 			{
-				case NAME -> Lists.newArrayList(this.whitelist.getNames());
-				case UUID -> this.whitelist.getUuidMapping().entrySet().stream()
+				case NAME -> Lists.newArrayList(list.getNames());
+				case UUID -> list.getUuidMapping().entrySet().stream()
 						.map(e -> pretty(e.getKey(), e.getValue()))
 						.toList();
 			};
@@ -158,7 +200,7 @@ public class WhitelistManager
 		// uuid: get from value directly, or mojang api (lookup by input value)
 		// profile: get from server online player, lookuped by input value (name / uuid)
 
-		synchronized (this.whitelistLock)
+		synchronized (this.listLock)
 		{
 			switch (this.config.getIdentifyMode())
 			{
@@ -189,21 +231,26 @@ public class WhitelistManager
 		return false;
 	}
 
-	public boolean addPlayer(CommandSource source, String value)
+	public boolean addPlayer(CommandSource source, @Nullable PlayerList list, String value)
 	{
+		if (list == null)
+		{
+			source.sendMessage(Component.text("Uninitialized"));
+			return false;
+		}
 		return this.operatePlayer(
 				source, value,
 				(uuid, playerName) -> {
-					if (this.whitelist.getNames().add(playerName))
+					if (list.getNames().add(playerName))
 					{
-						source.sendMessage(Component.text(String.format("Added player %s to the whitelist", playerName)));
+						source.sendMessage(Component.text(String.format("Added player %s to the %s", playerName, list.getName())));
 						return true;
 					}
-					source.sendMessage(Component.text(String.format("Player %s is already in the whitelist", playerName)));
+					source.sendMessage(Component.text(String.format("Player %s is already in the %s", playerName, list.getName())));
 					return false;
 				},
 				(uuid, playerName, displayName) -> {
-					Map<UUID, String> uuids = this.whitelist.getUuidMapping();
+					Map<UUID, String> uuids = list.getUuidMapping();
 					if (uuids.containsKey(uuid))
 					{
 						String oldName = uuids.get(uuid);
@@ -211,44 +258,49 @@ public class WhitelistManager
 						{
 							uuids.put(uuid, playerName);  // set player name as a comment
 							source.sendMessage(Component.text(String.format(
-									"Player %s is already in the whitelist, updated player name for this uuid from %s to %s",
-									displayName, oldName, playerName
+									"Player %s is already in the %s, updated player name for this uuid from %s to %s",
+									displayName, list.getName(), oldName, playerName
 							)));
 						}
 						else
 						{
-							source.sendMessage(Component.text(String.format("Player %s is already in the whitelist", displayName)));
+							source.sendMessage(Component.text(String.format("Player %s is already in the %s", displayName, list.getName())));
 						}
 						return false;
 					}
 
 					uuids.put(uuid, playerName);
-					source.sendMessage(Component.text(String.format("Added player %s to the whitelist", displayName)));
+					source.sendMessage(Component.text(String.format("Added player %s to the %s", displayName, list.getName())));
 					return true;
 				}
 		);
 	}
 
-	public boolean removePlayer(CommandSource source, String value)
+	public boolean removePlayer(CommandSource source, @Nullable PlayerList list, String value)
 	{
+		if (list == null)
+		{
+			source.sendMessage(Component.text("Uninitialized"));
+			return false;
+		}
 		return this.operatePlayer(
 				source, value,
 				(uuid, playerName) -> {
-					if (this.whitelist.getNames().add(playerName))
+					if (list.getNames().add(playerName))
 					{
-						source.sendMessage(Component.text(String.format("Removed player %s from the whitelist", playerName)));
+						source.sendMessage(Component.text(String.format("Removed player %s from the %s", playerName, list.getName())));
 						return true;
 					}
-					source.sendMessage(Component.text(String.format("Player %s is already in the whitelist", playerName)));
+					source.sendMessage(Component.text(String.format("Player %s is already in the %s", playerName, list.getName())));
 					return false;
 				},
 				(uuid, playerName, displayName) -> {
-					if (this.whitelist.getUuidMapping().remove(uuid) != null)
+					if (list.getUuidMapping().remove(uuid) != null)
 					{
-						source.sendMessage(Component.text(String.format("Removed player %s from the whitelist", displayName)));
+						source.sendMessage(Component.text(String.format("Removed player %s from the %s", displayName, list.getName())));
 						return true;
 					}
-					source.sendMessage(Component.text(String.format("Player %s is not in the whitelist", displayName)));
+					source.sendMessage(Component.text(String.format("Player %s is not in the %s", displayName, list.getName())));
 					return false;
 				}
 		);
@@ -257,65 +309,71 @@ public class WhitelistManager
 
 	public void onPlayerLogin(LoginEvent event)
 	{
-		if (!this.config.isEnabled())
-		{
-			return;
-		}
-		if (this.whitelist == null)
-		{
-			return;
-		}
-
 		GameProfile profile = event.getPlayer().getGameProfile();
-		boolean allowed = this.isPlayerInWhitelist(profile);
-		if (!allowed)
-		{
-			TextComponent message = Component.text(this.config.getKickMessage());
-			event.setResult(ResultedEvent.ComponentResult.denied(message));
 
-			this.logger.info("Kicking player {} ({}) since it's not in the whitelist", profile.getName(), profile.getId());
+		if (this.config.isWhitelistEnabled() && this.whitelist != null)
+		{
+			if (!this.isPlayerInWhitelist(profile))
+			{
+				TextComponent message = Component.text(this.config.getWhitelistKickMessage());
+				event.setResult(ResultedEvent.ComponentResult.denied(message));
+
+				this.logger.info("Kicking player {} ({}) since it's not in the whitelist", profile.getName(), profile.getId());
+			}
+		}
+		else if (this.config.isBlacklistEnabled() && this.blacklist != null)
+		{
+			if (this.isPlayerInBlacklist(profile))
+			{
+				TextComponent message = Component.text(this.config.getBlacklistKickMessage());
+				event.setResult(ResultedEvent.ComponentResult.denied(message));
+
+				this.logger.info("Kicking player {} ({}) since it's in the blacklist", profile.getName(), profile.getId());
+			}
 		}
 	}
 
-	private void loadWhitelist()
+	private void loadOneList(Supplier<@NotNull PlayerList> listFactory, Consumer<@NotNull PlayerList> listAssigner)
 	{
+		PlayerList list = listFactory.get();
 		try
 		{
-			Whitelist whitelist = new Whitelist(this.whitelistFilePath);
-			if (!this.whitelistFilePath.toFile().isFile())
+			if (!list.getFilePath().toFile().isFile())
 			{
-				this.logger.info("Creating default empty whitelist file");
-				whitelist.save();
+				this.logger.info("Creating default empty {} file", list.getName());
+				list.save();
 			}
-			whitelist.load(this.logger);
+			list.load(this.logger);
 
-			synchronized (this.whitelistLock)
+			synchronized (this.listLock)
 			{
-				this.whitelist = whitelist;
+				listAssigner.accept(list);
 			}
 		}
 		catch (IOException e)
 		{
-			this.logger.error("Failed to load whitelist, the plugin will not work!", e);
+			String msg = String.format("Failed to load the %s, the plugin will not work correctly!", list.getName());
+			this.logger.error(msg, e);
 		}
 	}
 
-	public void saveWhitelist()
+	public void saveList(@Nullable PlayerList list)
 	{
-		if (this.whitelist == null)
+		if (list == null)
 		{
 			return;
 		}
 		try
 		{
-			synchronized (this.whitelistLock)
+			synchronized (this.listLock)
 			{
-				this.whitelist.save();
+				list.save();
 			}
 		}
 		catch (IOException e)
 		{
-			this.logger.error("Failed to save whitelist", e);
+			String msg = String.format("Failed to save the %s", list.getName());
+			this.logger.error(msg, e);
 		}
 	}
 }

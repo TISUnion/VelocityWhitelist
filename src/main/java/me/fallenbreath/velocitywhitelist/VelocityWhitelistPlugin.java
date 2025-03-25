@@ -19,7 +19,7 @@ import java.util.Objects;
 
 @Plugin(
 		id = PluginMeta.ID, name = PluginMeta.NAME, version = PluginMeta.VERSION,
-		url = "https://github.com/TISUnion/VelocityWhitelist",
+		url = PluginMeta.REPOSITORY_URL,
 		description = "A simple whitelist plugin for velocity",
 		authors = {"Fallen_Breath"}
 )
@@ -28,6 +28,7 @@ public class VelocityWhitelistPlugin
 	private final ProxyServer server;
 	private final Logger logger;
 	private final Path dataDirectory;
+	private final Path configFilePath;
 	private final Configuration config;
 	private final WhitelistManager whitelistManager;
 
@@ -37,7 +38,8 @@ public class VelocityWhitelistPlugin
 		this.server = server;
 		this.logger = logger;
 		this.dataDirectory = dataDirectory;
-		this.config = new Configuration(this.logger);
+		this.configFilePath = dataDirectory.resolve("config.yml");
+		this.config = new Configuration(this.logger, this.configFilePath);
 		this.whitelistManager = new WhitelistManager(logger, this.config, this.dataDirectory, this.server);
 	}
 
@@ -51,7 +53,7 @@ public class VelocityWhitelistPlugin
 		}
 
 		// now the config dir definitely exists
-		this.whitelistManager.init();
+		this.whitelistManager.loadLists();
 
 		this.server.getEventManager().register(this, LoginEvent.class, this.whitelistManager::onPlayerLogin);
 		new WhitelistCommand(this.config, this.whitelistManager).register(this.server.getCommandManager());
@@ -65,7 +67,7 @@ public class VelocityWhitelistPlugin
 			return false;
 		}
 
-		File file = this.dataDirectory.resolve("config.yml").toFile();
+		File file = this.configFilePath.toFile();
 
 		if (!file.exists())
 		{

@@ -1,6 +1,6 @@
 # VelocityWhitelist
 
-A simple whitelist plugin for [velocity](https://github.com/PaperMC/Velocity)
+A simple whitelist / blacklist plugin for [velocity](https://github.com/PaperMC/Velocity)
 
 Tested with velocity `3.3.0`, java 17
 
@@ -11,28 +11,37 @@ Tested with velocity `3.3.0`, java 17
 File location: `plugins/velocitywhitelist/config.yml`
 
 ```yaml
-# If the whitelist functionality is enabled
-enabled: true
+# Config file version. Do not edit it
+_version: 1
 
 # The way to identify a player
 # Options: name, uuid. Default: name
+# For online servers, it's suggested to use the uuid mode 
+# since it can keep tracking on the mojang account of the player
 identify_mode: name
 
+# If the whitelist functionality is enabled
+whitelist_enabled: true
 # Message sent to those not whitelisted players
-kick_message: You are not in the whitelist!
+whitelist_kick_message: You are not in the whitelist!
+
+# If the blacklist functionality is enabled
+blacklist_enabled: true
+# Message sent to those blacklisted players
+blacklist_kick_message: You are banned from the server!
 ```
 
-### Whitelist
+### Whitelist / Blacklist
 
-File location: `plugins/velocitywhitelist/whitelist.yml`
+File location: `plugins/velocitywhitelist/whitelist.yml`, `plugins/velocitywhitelist/blacklist.yml`
 
 ```yaml
-# Whitelisted player names. Used in "name" mode only
+# Listed player names. Used in "name" mode only
 names:
 - Fallen_Breath
 - Steve
 
-# Whitelisted player UUIDs. Used in "uuid" mode only
+# Listed player UUIDs. Used in "uuid" mode only
 uuids:
 - 85dbd009-69ed-3cc4-b6b6-ac1e6d07202e
 - 5c93374f-2d55-3003-a4b5-ca885736fb0f
@@ -51,7 +60,10 @@ uuids:
 
 Require permission `velocitywhitelist.command`
 
-`/vwhitelist` is an alias of `/whitelist`
+- `/whitelist` and `/vwhitelist` (alias) commands are for whitelist control
+- `/blacklist` and `/vblacklist` (alias) commands are for whitelist control
+
+Let's use `/whitelist` as demonstration
 
 - `/whitelist`: Show plugin status
 - `/whitelist add <value>`: Add a player to the whitelist
@@ -69,3 +81,4 @@ For player operation commands, `<value>` has different meaning depends on the id
 ## TODO
 
 - [x] UUID support
+- [ ] IP ban for blacklist

@@ -3,40 +3,50 @@ package me.fallenbreath.velocitywhitelist.config;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import me.fallenbreath.velocitywhitelist.utils.FileUtils;
 import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class Whitelist
+public class PlayerList
 {
 	private final Set<String> names = Sets.newLinkedHashSet();
 	private final Map<UUID, @Nullable String> uuids = Maps.newLinkedHashMap();
-	private final Path whitelistFilePath;
-	private final Path whitelistTempFilePath;
+	private final String name;
+	private final Path listFilePath;
+	private final Path listTempFilePath;
 
-	public Whitelist(Path whitelistFilePath)
+	public PlayerList(String name, Path listFilePath)
 	{
-		this.whitelistFilePath = whitelistFilePath;
-		this.whitelistTempFilePath = whitelistFilePath.resolveSibling(whitelistFilePath.getFileName().toString() + ".tmp");
+		this.name = name;
+		this.listFilePath = listFilePath;
+		this.listTempFilePath = listFilePath.resolveSibling(listFilePath.getFileName().toString() + ".tmp");
+	}
+
+	public String getName()
+	{
+		return this.name;
+	}
+
+	public Path getFilePath()
+	{
+		return this.listFilePath;
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public void load(Logger logger) throws IOException
 	{
 		Map<String, Object> options = Maps.newHashMap();
-		String yamlContent = Files.readString(whitelistFilePath);
+		String yamlContent = Files.readString(listFilePath);
 
 		options = new Yaml().loadAs(yamlContent, options.getClass());
 
@@ -93,12 +103,7 @@ public class Whitelist
 				.toList();
 		options.put("uuids", uuidList);
 
-		DumperOptions dumperOptions = new DumperOptions();
-		dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-
-		String yamlContent = new Yaml(dumperOptions).dump(options);
-		Files.writeString(this.whitelistTempFilePath, yamlContent, StandardCharsets.UTF_8);
-		Files.move(this.whitelistTempFilePath, this.whitelistFilePath, StandardCopyOption.REPLACE_EXISTING);
+		FileUtils.dumpYaml(this.listFilePath, this.listTempFilePath, options);
 	}
 
 	public Set<String> getNames()
