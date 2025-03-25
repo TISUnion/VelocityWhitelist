@@ -59,6 +59,9 @@ public class PluginControlCommand
 	private int showPluginInfo(CommandSource source)
 	{
 		source.sendMessage(Component.text(String.format("%s v%s", PluginMeta.NAME, PluginMeta.VERSION)));
+		source.sendMessage(Component.text(String.format("Whitelist enabled: %s", this.config.isWhitelistEnabled())));
+		source.sendMessage(Component.text(String.format("Blacklist enabled: %s", this.config.isBlacklistEnabled())));
+		source.sendMessage(Component.text(String.format("Identify Mode: %s", this.config.getIdentifyMode().name().toLowerCase())));
 		source.sendMessage(Component.text(PluginMeta.REPOSITORY_URL, NamedTextColor.BLUE, TextDecoration.UNDERLINED).clickEvent(ClickEvent.openUrl(PluginMeta.REPOSITORY_URL)));
 		return 0;
 	}
