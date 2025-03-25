@@ -139,11 +139,11 @@ public class Configuration
 
 	public String getBlacklistKickMessage()
 	{
-		Object maxPlayer = this.options.get("whitelist_kick_message");
+		Object maxPlayer = this.options.get("blacklist_kick_message");
 		if (maxPlayer instanceof String)
 		{
 			return (String)maxPlayer;
 		}
-		return "You are not in the whitelist!";
+		return "You are banned from the server!";
 	}
 }
