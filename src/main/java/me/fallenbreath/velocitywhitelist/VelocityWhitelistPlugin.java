@@ -7,6 +7,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import me.fallenbreath.velocitywhitelist.command.PluginControlCommand;
 import me.fallenbreath.velocitywhitelist.command.WhitelistCommand;
 import me.fallenbreath.velocitywhitelist.config.Configuration;
 import org.slf4j.Logger;
@@ -57,6 +58,7 @@ public class VelocityWhitelistPlugin
 
 		this.server.getEventManager().register(this, LoginEvent.class, this.whitelistManager::onPlayerLogin);
 		new WhitelistCommand(this.config, this.whitelistManager).register(this.server.getCommandManager());
+		new PluginControlCommand(this.logger, this.config, this.whitelistManager).register(this.server.getCommandManager());
 	}
 
 	private boolean prepareConfig()

@@ -60,6 +60,8 @@ uuids:
 
 Require permission `velocitywhitelist.command`
 
+### Whitelist / Blacklist Control
+
 - `/whitelist` and `/vwhitelist` (alias) commands are for whitelist control
 - `/blacklist` and `/vblacklist` (alias) commands are for whitelist control
 
@@ -77,6 +79,11 @@ For player operation commands, `<value>` has different meaning depends on the id
 - `uuid` mode: `<value>` should be the UUID of the player, or the name of the player. 
   If it's a player name, and the player is connected to the proxy, the player's UUID will be used, 
   otherwise it will try to fetch and use the player's online UUID from mojang API
+
+### Plugin Control
+
+- `/velocitywhitelist`: Show plugin information
+- `/velocitywhitelist reload`: Reload config, whitelist and blacklist
 
 ## TODO
 

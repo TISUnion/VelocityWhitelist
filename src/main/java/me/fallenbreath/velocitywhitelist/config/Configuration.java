@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +37,12 @@ public class Configuration
 		this.migrate();
 
 		this.identifyMode = this.makeIdentifyMode();
+	}
+
+	public void reload() throws IOException
+	{
+		String content = Files.readString(this.configFilePath);
+		this.load(content);
 	}
 
 	private void migrate()
