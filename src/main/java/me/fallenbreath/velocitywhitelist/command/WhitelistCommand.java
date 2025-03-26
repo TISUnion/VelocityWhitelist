@@ -1,18 +1,13 @@
 package me.fallenbreath.velocitywhitelist.command;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandSource;
 import me.fallenbreath.velocitywhitelist.PluginMeta;
 import me.fallenbreath.velocitywhitelist.WhitelistManager;
-import me.fallenbreath.velocitywhitelist.config.Configuration;
 import me.fallenbreath.velocitywhitelist.config.PlayerList;
 import net.kyori.adventure.text.Component;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
 import static com.mojang.brigadier.arguments.StringArgumentType.word;
@@ -20,17 +15,15 @@ import static me.fallenbreath.velocitywhitelist.command.CommandUtils.*;
 
 public class WhitelistCommand
 {
-	private final Configuration config;
 	private final WhitelistManager manager;
 
-	public WhitelistCommand(Configuration config, WhitelistManager whitelistManager)
+	public WhitelistCommand(WhitelistManager whitelistManager)
 	{
-		this.config = config;
 		this.manager = whitelistManager;
 	}
 
 	@SuppressWarnings("deprecation")  // Next time for sure...
-	private void registerOne(CommandManager commandManager, String[] roots, Supplier<Boolean> enableStateGetter, Supplier<@Nullable PlayerList> listSupplier, Runnable listReloader)
+	private void registerOne(CommandManager commandManager, String[] roots, PlayerList list)
 	{
 		if (roots.length == 0)
 		{
@@ -39,23 +32,23 @@ public class WhitelistCommand
 
 		var root = literal(roots[0]).
 				requires(s -> s.hasPermission(PluginMeta.ID + ".command")).
-				executes(c -> showPluginInfo(c.getSource(), listSupplier.get(), enableStateGetter.get())).
+				executes(c -> showListStatus(c.getSource(), list)).
 				then(literal("add").
 						then(argument("name", word()).
-								executes(c -> addWhitelist(c.getSource(), listSupplier.get(), getString(c, "name")))
+								executes(c -> addPlayer(c.getSource(), list, getString(c, "name")))
 						)
 				).
 				then(literal("remove").
 						then(argument("name", word()).
-								suggests((c, sb) -> suggestMatching(this.manager.getValuesForRemovalSuggestion(listSupplier.get()), sb)).
-								executes(c -> removeWhitelist(c.getSource(), listSupplier.get(), getString(c, "name")))
+								suggests((c, sb) -> suggestMatching(this.manager.getValuesForRemovalSuggestion(list), sb)).
+								executes(c -> removePlayer(c.getSource(), list, getString(c, "name")))
 						)
 				).
 				then(literal("list").
-						executes(c -> listWhitelist(c.getSource(), listSupplier.get()))
+						executes(c -> listPlayers(c.getSource(), list))
 				).
 				then(literal("reload").
-						executes(c -> reloadWhitelist(c.getSource(), listReloader, listSupplier))
+						executes(c -> reloadList(c.getSource(), list))
 				);
 		commandManager.register(new BrigadierCommand(root.build()));
 
@@ -71,26 +64,32 @@ public class WhitelistCommand
 
 	public void register(CommandManager commandManager)
 	{
-		this.registerOne(commandManager, new String[]{"whitelist", "vwhitelist"}, this.config::isWhitelistEnabled, this.manager::getWhitelist, this.manager::loadWhitelist);
-		this.registerOne(commandManager, new String[]{"blacklist", "vblacklist"}, this.config::isBlacklistEnabled, this.manager::getBlacklist, this.manager::loadBlacklist);
+		this.registerOne(commandManager, new String[]{"whitelist", "vwhitelist"}, this.manager.getWhitelist());
+		this.registerOne(commandManager, new String[]{"blacklist", "vblacklist"}, this.manager.getBlacklist());
 	}
 
-	private int showPluginInfo(CommandSource source, @Nullable PlayerList list, boolean enabled)
+	private int showListStatus(CommandSource source, PlayerList list)
 	{
-		if (list == null)
+		source.sendMessage(Component.text(String.format("%s v%s", PluginMeta.NAME, PluginMeta.VERSION)));
+		showListStatus(source, list, list.getName() + " ");
+		return 1;
+	}
+
+	protected static void showListStatus(CommandSource source, PlayerList list, String prefix)
+	{
+		source.sendMessage(Component.text(String.format("%sActivated: %s (config enabled: %s, load ok: %s)", prefix, list.isActivated(), list.isConfigEnabled(), list.isLoadOk())));
+		source.sendMessage(Component.text(String.format("%sSize: %d player names, %d player UUIDs", prefix, list.getPlayerNames().size(), list.getPlayerUuidMappingEntries().size())));
+	}
+
+	private int addPlayer(CommandSource source, PlayerList list, String playerName)
+	{
+		if (!list.isActivated())
 		{
-			source.sendMessage(Component.text("Uninitialized"));
+			source.sendMessage(Component.text(String.format("%s is not activated", list.getName())));
 			return 0;
 		}
 
-		source.sendMessage(Component.text(String.format("%s v%s", PluginMeta.NAME, PluginMeta.VERSION)));
-		source.sendMessage(Component.text(String.format("%s enabled: %s", list.getName(), enabled)));
-		return enabled ? 2 : 1;
-	}
-
-	private int addWhitelist(CommandSource source, @Nullable PlayerList list, String name)
-	{
-		if (this.manager.addPlayer(source, list,name))
+		if (this.manager.addPlayer(source, list,playerName))
 		{
 			this.manager.saveList(list);
 			return 1;
@@ -98,9 +97,15 @@ public class WhitelistCommand
 		return 0;
 	}
 
-	private int removeWhitelist(CommandSource source, @Nullable PlayerList list, String name)
+	private int removePlayer(CommandSource source, PlayerList list, String playerName)
 	{
-		if (this.manager.removePlayer(source, list, name))
+		if (!list.isActivated())
+		{
+			source.sendMessage(Component.text(String.format("%s is not activated", list.getName())));
+			return 0;
+		}
+
+		if (this.manager.removePlayer(source, list, playerName))
 		{
 			this.manager.saveList(list);
 			return 1;
@@ -108,11 +113,11 @@ public class WhitelistCommand
 		return 0;
 	}
 
-	private int listWhitelist(CommandSource source, @Nullable PlayerList list)
+	private int listPlayers(CommandSource source, PlayerList list)
 	{
-		if (list == null)
+		if (!list.isActivated())
 		{
-			source.sendMessage(Component.text("Uninitialized"));
+			source.sendMessage(Component.text(String.format("%s is not activated", list.getName())));
 			return 0;
 		}
 
@@ -122,11 +127,23 @@ public class WhitelistCommand
 		return players.size();
 	}
 
-	private int reloadWhitelist(CommandSource source, Runnable listReloader, Supplier<@Nullable PlayerList> listGetter)
+	private int reloadList(CommandSource source, PlayerList list)
 	{
-		listReloader.run();
-		String name = Optional.ofNullable(listGetter.get()).map(PlayerList::getName).orElse("?");
-		source.sendMessage(Component.text(String.format("%s reloaded", name)));
-		return 0;
+		if (!list.isConfigEnabled())
+		{
+			source.sendMessage(Component.text(String.format("%s is disabled by config", list.getName())));
+			return 0;
+		}
+
+		if (this.manager.loadOneList(list))
+		{
+			source.sendMessage(Component.text(String.format("%s reloaded", list.getName())));
+			return 1;
+		}
+		else
+		{
+			source.sendMessage(Component.text(String.format("%s reload failed, see console for more information", list.getName())));
+			return 0;
+		}
 	}
 }

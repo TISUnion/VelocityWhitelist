@@ -15,10 +15,9 @@ import java.util.Optional;
 
 public class Configuration
 {
-	private final Map<String, Object> options = Maps.newLinkedHashMap();
+	private final Map<String, Object> options = Maps.newConcurrentMap();
 	private final Logger logger;
 	private final Path configFilePath;
-	private final Path configTempFilePath;
 
 	private IdentifyMode identifyMode = IdentifyMode.DEFAULT;
 
@@ -26,7 +25,6 @@ public class Configuration
 	{
 		this.logger = logger;
 		this.configFilePath = configFilePath;
-		this.configTempFilePath = configFilePath.resolveSibling(configFilePath.getFileName().toString() + ".tmp");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -59,7 +57,7 @@ public class Configuration
 			newOptions.put("identify_mode", Optional.ofNullable(this.options.get("identify_mode")).orElse("name"));
 			newOptions.put("whitelist_enabled", Optional.ofNullable(this.options.get("enabled")).orElse(true));
 			newOptions.put("whitelist_kick_message", Optional.ofNullable(this.options.get("kick_message")).orElse("You are not in the whitelist!"));
-			newOptions.put("blacklist_enabled", Optional.ofNullable(this.options.get("enabled")).orElse(true));
+			newOptions.put("blacklist_enabled", Optional.ofNullable(this.options.get("enabled")).orElse(true));  // it's ok to enable an empty blacklist
 			newOptions.put("blacklist_kick_message", "You are banned from the server!");
 
 			this.options.clear();
@@ -82,7 +80,7 @@ public class Configuration
 
 	private void save() throws IOException
 	{
-		FileUtils.dumpYaml(this.configFilePath, this.configTempFilePath, this.options);
+		FileUtils.dumpYaml(this.configFilePath, this.options);
 	}
 
 	private IdentifyMode makeIdentifyMode()

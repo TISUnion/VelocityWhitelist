@@ -57,7 +57,7 @@ public class VelocityWhitelistPlugin
 		this.whitelistManager.loadLists();
 
 		this.server.getEventManager().register(this, LoginEvent.class, this.whitelistManager::onPlayerLogin);
-		new WhitelistCommand(this.config, this.whitelistManager).register(this.server.getCommandManager());
+		new WhitelistCommand(this.whitelistManager).register(this.server.getCommandManager());
 		new PluginControlCommand(this.logger, this.config, this.whitelistManager).register(this.server.getCommandManager());
 	}
 

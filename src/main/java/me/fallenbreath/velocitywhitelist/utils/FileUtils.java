@@ -11,18 +11,19 @@ import java.nio.file.StandardCopyOption;
 
 public class FileUtils
 {
-	public static void safeWrite(Path path, Path tempPath, String content) throws IOException
+	public static void safeWrite(Path path, String content) throws IOException
 	{
+		Path tempPath = path.resolveSibling(path.getFileName().toString() + ".tmp");
 		Files.writeString(tempPath, content, StandardCharsets.UTF_8);
 		Files.move(tempPath, path, StandardCopyOption.REPLACE_EXISTING);
 	}
 
-	public static void dumpYaml(Path path, Path tempPath, Object data) throws IOException
+	public static void dumpYaml(Path path, Object data) throws IOException
 	{
 		DumperOptions dumperOptions = new DumperOptions();
 		dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
 		String yamlContent = new Yaml(dumperOptions).dump(data);
-		safeWrite(path, tempPath, yamlContent);
+		safeWrite(path, yamlContent);
 	}
 }
