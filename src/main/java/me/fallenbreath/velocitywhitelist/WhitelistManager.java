@@ -194,12 +194,17 @@ public class WhitelistManager
 		return false;
 	}
 
-	@SuppressWarnings("CodeBlock2Expr")
 	public boolean addPlayer(CommandSource source, PlayerList list, String value)
 	{
+		boolean isBlacklist = list == this.getBlacklist();
 		return this.operatePlayer(
 				source, value,
 				(uuid, playerName) -> {
+					if (isBlacklist)
+					{
+						this.server.getPlayer(playerName).ifPresent(this::handlePlayerAddedToBlacklist);
+					}
+
 					if (list.addPlayerName(playerName))
 					{
 						source.sendMessage(Component.text(String.format("Added player %s to the %s", playerName, list.getName())));
@@ -209,6 +214,11 @@ public class WhitelistManager
 					return false;
 				},
 				(uuid, playerName, displayName) -> {
+					if (isBlacklist)
+					{
+						this.server.getPlayer(uuid).ifPresent(this::handlePlayerAddedToBlacklist);
+					}
+
 					return list.computePlayerUUID(uuid, (exists, oldName) -> {
 						var result = new PlayerList.PlayerUUIDComputeResult<Boolean>();
 						if (exists)
@@ -242,6 +252,13 @@ public class WhitelistManager
 					});
 				}
 		);
+	}
+
+	private void handlePlayerAddedToBlacklist(Player player)
+	{
+		var profile = player.getGameProfile();
+		this.logger.info("Kicking player {} ({}) since it's being added to the blacklist", profile.getName(), profile.getId());
+		player.disconnect(Component.text(this.config.getBlacklistKickMessage()));
 	}
 
 	public boolean removePlayer(CommandSource source, PlayerList list, String value)
