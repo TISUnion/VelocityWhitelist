@@ -132,7 +132,9 @@ public class WhitelistManager
 			UuidHandler handleUuidMode
 	)
 	{
-		Optional<UUID> uuid = UuidUtils.tryParseUuid(value);
+		final Optional<UUID> inputUuid = UuidUtils.tryParseUuid(value);
+
+		Optional<UUID> uuid = inputUuid;
 		Optional<GameProfile> profile = this.server.getPlayer(value).map(Player::getGameProfile);  // get online player by name
 
 		if (uuid.isEmpty())
@@ -169,7 +171,7 @@ public class WhitelistManager
 		switch (this.config.getIdentifyMode())
 		{
 			case NAME:
-				if (uuid.isPresent())
+				if (inputUuid.isPresent())
 				{
 					source.sendPlainMessage("WARN: Trying to use UUID in NAME mode. Nothing will happen");
 					return false;
