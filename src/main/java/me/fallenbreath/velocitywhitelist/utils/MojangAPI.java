@@ -39,6 +39,7 @@ public class MojangAPI
 	{
 	}
 
+	private static final String ACCOUNT_URL_BASE = System.getProperty("velocitywhitelist.mojang.accountserver", "https://api.mojang.com/users/profiles/minecraft/");
 	private static final int QUERY_CACHE_TTL_MS = 5 * 60 * 1000;  // 5min
 	private static final int QUERY_CACHE_EMPTY_TTL_MS = 60 * 1000;  // 1min
 	private static final int QUERY_CACHE_CAPACITY = 100;
@@ -69,9 +70,7 @@ public class MojangAPI
 			}
 		};
 
-		// TODO: use http proxy from my fork
-		// TODO: simple expiring lru cache?
-		String url = "https://api.mojang.com/users/profiles/minecraft/" + name;
+		String url = ACCOUNT_URL_BASE + name;
 		HttpClient client = createHttpClient(server);
 
 		HttpRequest request = HttpRequest.newBuilder()

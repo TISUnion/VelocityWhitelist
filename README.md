@@ -79,6 +79,9 @@ For player operation commands, `<value>` has different meaning depends on the id
 - `uuid` mode: `<value>` should be the UUID of the player, or the name of the player. 
   If it's a player name, and the player is connected to the proxy, the player's UUID will be used, 
   otherwise it will try to fetch and use the player's online UUID from mojang API
+  - The url base of the mojang API can be alternated with system property `velocitywhitelist.mojang.accountserver` 
+    (default value: `https://api.mojang.com/users/profiles/minecraft/`).
+    The final url string is concatenated from the property value and the player name ([example for steve](https://api.mojang.com/users/profiles/minecraft/Steve))
 
 ### Plugin Control
 
