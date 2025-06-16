@@ -13,6 +13,7 @@ import me.fallenbreath.velocitywhitelist.utils.MojangAPI;
 import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -260,7 +261,8 @@ public class WhitelistManager
 	{
 		var profile = player.getGameProfile();
 		this.logger.info("Kicking player {} ({}) since it's being added to the blacklist", profile.getName(), profile.getId());
-		player.disconnect(Component.text(this.config.getBlacklistKickMessage()));
+		Component message = MiniMessage.miniMessage().deserialize(this.config.getBlacklistKickMessage());
+		player.disconnect(message);
 	}
 
 	public boolean removePlayer(CommandSource source, PlayerList list, String value)
@@ -297,7 +299,7 @@ public class WhitelistManager
 		{
 			if (!this.isPlayerInWhitelist(profile))
 			{
-				TextComponent message = Component.text(this.config.getWhitelistKickMessage());
+				Component message = MiniMessage.miniMessage().deserialize(this.config.getWhitelistKickMessage());
 				event.setResult(ResultedEvent.ComponentResult.denied(message));
 
 				this.logger.info("Kicking player {} ({}) since it's not in the whitelist", profile.getName(), profile.getId());
@@ -307,7 +309,7 @@ public class WhitelistManager
 		{
 			if (this.isPlayerInBlacklist(profile))
 			{
-				TextComponent message = Component.text(this.config.getBlacklistKickMessage());
+				Component message = MiniMessage.miniMessage().deserialize(this.config.getBlacklistKickMessage());
 				event.setResult(ResultedEvent.ComponentResult.denied(message));
 
 				this.logger.info("Kicking player {} ({}) since it's in the blacklist", profile.getName(), profile.getId());
