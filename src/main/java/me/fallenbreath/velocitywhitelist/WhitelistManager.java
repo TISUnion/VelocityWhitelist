@@ -35,8 +35,8 @@ public class WhitelistManager
 	{
 		this.logger = logger;
 		this.config = config;
-		this.whitelist = new PlayerList("Whitelist", dataDirectory.resolve("whitelist.yml"), this.config::isWhitelistEnabled);
-		this.blacklist = new PlayerList("Blacklist", dataDirectory.resolve("blacklist.yml"), this.config::isBlacklistEnabled);
+		this.whitelist = new PlayerList("Whitelist", dataDirectory.resolve("whitelist.yml"));
+		this.blacklist = new PlayerList("Blacklist", dataDirectory.resolve("blacklist.yml"));
 		this.server = server;
 	}
 
@@ -54,6 +54,12 @@ public class WhitelistManager
 	{
 		this.loadOneList(this.whitelist);
 		this.loadOneList(this.blacklist);
+	}
+
+	public void enableList(PlayerList list, boolean enabled)
+	{
+		list.setEnabled(enabled);
+		saveList(list);
 	}
 
 	private boolean isPlayerInList(GameProfile profile, PlayerList list)

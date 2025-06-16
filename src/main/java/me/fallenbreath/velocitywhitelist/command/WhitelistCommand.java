@@ -33,6 +33,13 @@ public class WhitelistCommand
 		var root = literal(roots[0]).
 				requires(s -> s.hasPermission(PluginMeta.ID + ".command")).
 				executes(c -> showListStatus(c.getSource(), list)).
+				then(literal("enable")
+						.executes(c -> enable(c.getSource(), list))
+				).
+                then(
+                        literal("disable")
+                                .executes(c -> disable(c.getSource(), list))
+                ).
 				then(literal("add").
 						then(argument("name", word()).
 								executes(c -> addPlayer(c.getSource(), list, getString(c, "name")))
@@ -77,8 +84,28 @@ public class WhitelistCommand
 
 	protected static void showListStatus(CommandSource source, PlayerList list, String prefix)
 	{
-		source.sendMessage(Component.text(String.format("%sActivated: %s (config enabled: %s, load ok: %s)", prefix, list.isActivated(), list.isConfigEnabled(), list.isLoadOk())));
+		source.sendMessage(Component.text(String.format("%sActivated: %s (enabled: %s, load ok: %s)", prefix, list.isActivated(), list.isEnabled(), list.isLoadOk())));
 		source.sendMessage(Component.text(String.format("%sSize: %d player names, %d player UUIDs", prefix, list.getPlayerNames().size(), list.getPlayerUuidMappingEntries().size())));
+	}
+
+	private int enable(CommandSource source, PlayerList list) {
+		if (list.isEnabled()) {
+			source.sendMessage(Component.text(String.format("%s is already enabled.", list.getName())));
+			return 0;
+		}
+		manager.enableList(list, true);
+		source.sendMessage(Component.text(String.format("%s was enabled.", list.getName())));
+		return 1;
+	}
+
+	private int disable(CommandSource source, PlayerList list) {
+		if (!list.isEnabled()) {
+			source.sendMessage(Component.text(String.format("%s is already disabled", list.getName())));
+			return 0;
+		}
+		manager.enableList(list, false);
+		source.sendMessage(Component.text(String.format("%s was disabled.", list.getName())));
+		return 1;
 	}
 
 	private int addPlayer(CommandSource source, PlayerList list, String playerName)
@@ -129,12 +156,6 @@ public class WhitelistCommand
 
 	private int reloadList(CommandSource source, PlayerList list)
 	{
-		if (!list.isConfigEnabled())
-		{
-			source.sendMessage(Component.text(String.format("%s is disabled by config", list.getName())));
-			return 0;
-		}
-
 		if (this.manager.loadOneList(list))
 		{
 			source.sendMessage(Component.text(String.format("%s reloaded", list.getName())));
