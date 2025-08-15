@@ -55,9 +55,7 @@ public class Configuration
 			Map<String, Object> newOptions = Maps.newLinkedHashMap();
 			newOptions.put("_version", 1);
 			newOptions.put("identify_mode", Optional.ofNullable(this.options.get("identify_mode")).orElse("name"));
-			newOptions.put("whitelist_enabled", Optional.ofNullable(this.options.get("enabled")).orElse(true));
 			newOptions.put("whitelist_kick_message", Optional.ofNullable(this.options.get("kick_message")).orElse("You are not in the whitelist!"));
-			newOptions.put("blacklist_enabled", Optional.ofNullable(this.options.get("enabled")).orElse(true));  // it's ok to enable an empty blacklist
 			newOptions.put("blacklist_kick_message", "You are banned from the server!");
 
 			this.options.clear();
@@ -98,26 +96,6 @@ public class Configuration
 			}
 		}
 		return IdentifyMode.DEFAULT;
-	}
-
-	public boolean isWhitelistEnabled()
-	{
-		Object enabled = this.options.get("whitelist_enabled");
-		if (enabled instanceof Boolean)
-		{
-			return (Boolean)enabled;
-		}
-		return false;
-	}
-
-	public boolean isBlacklistEnabled()
-	{
-		Object enabled = this.options.get("blacklist_enabled");
-		if (enabled instanceof Boolean)
-		{
-			return (Boolean)enabled;
-		}
-		return false;
 	}
 
 	public IdentifyMode getIdentifyMode()

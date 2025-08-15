@@ -26,15 +26,14 @@ public class PlayerList
 	private final Map<UUID, @Nullable String> uuids = Maps.newLinkedHashMap();
 	private final String name;
 	private final Path filePath;
-	private final Supplier<Boolean> configEnableGetter;
 	private boolean loadOk = false;
 	private final Object lock = new Object();
+	private boolean enabled;
 
-	public PlayerList(String name, Path filePath, Supplier<Boolean> configEnableGetter)
+	public PlayerList(String name, Path filePath)
 	{
 		this.name = name;
 		this.filePath = filePath;
-		this.configEnableGetter = configEnableGetter;
 	}
 
 	public String getName()
@@ -55,19 +54,26 @@ public class PlayerList
 		}
 	}
 
-	public boolean isConfigEnabled()
-	{
+	public boolean isEnabled() {
 		synchronized (this.lock)
 		{
-			return this.configEnableGetter.get();
+			return this.enabled;
 		}
 	}
+
+    public void setEnabled(boolean enabled)
+    {
+        synchronized (this.lock)
+        {
+            this.enabled = enabled;
+        }
+    }
 
 	public boolean isActivated()
 	{
 		synchronized (this.lock)
 		{
-			return this.isLoadOk() && this.isConfigEnabled();
+			return this.isLoadOk() && this.isEnabled();
 		}
 	}
 
@@ -181,7 +187,7 @@ public class PlayerList
 
 	public PlayerList createNewEmptyList()
 	{
-		return new PlayerList(this.name, this.filePath, this.configEnableGetter);
+		return new PlayerList(this.name, this.filePath);
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -194,6 +200,12 @@ public class PlayerList
 
 		synchronized (this.lock)
 		{
+			if (options.get("enabled") instanceof Boolean bool) {
+				this.enabled = bool;
+			} else {
+				this.enabled = false;
+			}
+
 			this.names.clear();
 			if (options.get("names") instanceof List list)
 			{
@@ -248,6 +260,7 @@ public class PlayerList
 
 		synchronized (this.lock)
 		{
+            options.put("enabled", this.enabled);
 			options.put("names", Lists.newArrayList(this.names));
 			List<Object> uuidList = this.uuids.entrySet().stream()
 					.map(e -> e.getValue() != null ? Map.of(e.getKey().toString(), e.getValue()) : e.getKey().toString())
